@@ -61,8 +61,27 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "tontine_backend.wsgi.application"
 
+import os
+from urllib.parse import urlparse
+
 DB_ENGINE = config("DB_ENGINE", default="sqlite")
-if DB_ENGINE == "postgres":
+DATABASE_URL = config("DATABASE_URL", default="")
+
+if DATABASE_URL:
+    # Support Neon / Heroku style DATABASE_URL
+    url = urlparse(DATABASE_URL)
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": url.path[1:],
+            "USER": url.username,
+            "PASSWORD": url.password,
+            "HOST": url.hostname,
+            "PORT": url.port or 5432,
+            "OPTIONS": {"sslmode": "require"} if "neon" in (url.hostname or "") else {},
+        }
+    }
+elif DB_ENGINE == "postgres":
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
