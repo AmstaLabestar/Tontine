@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: tontine
+      POSTGRES_USER: tontine
+      POSTGRES_PASSWORD: tontine_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - SECRET_KEY=change-me-in-production
+      - DEBUG=False
+      - DB_ENGINE=postgres
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=tontine
+      - DB_USER=tontine
+      - DB_PASSWORD=tontine_dev
+    depends_on:
+      - db
+    command: >
+      sh -c "python manage.py migrate &&
+             gunicorn tontine_backend.wsgi:application --bind 0.0.0.0:8000"
+
+volumes:
+  postgres_data:
